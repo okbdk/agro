@@ -17,8 +17,8 @@ int pinSoil = A0; // входной пин для влажности почвы
 int Soil; // значение датчика влажности
 
 // pH = A * data + B
-float pHcalA[2] = {-0.0275, -0.0275};
-float pHcalB[2] = {26.128, 26.128};
+float pHcalA[2] = {-0.0275, -0.0282};
+float pHcalB[2] = {26.128, 28.565};
 
 float pH(int pHn, int pHdata) { // pHn - номер датчика (1 или 2), pHdata - данные датчика (от 500 до 900)
   return pHcalA[pHn-1] * pHdata + pHcalB[pHn-1]; // калибровочные данные
