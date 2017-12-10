@@ -6,33 +6,39 @@
 
 #### Емкость с раствором
 * pin A11 (INPUT) - датчик температуры (**P1.TempWater**) 
-  * если (**P1.TempWater** < **_TempWater_min_**) или (**P1.TempWater** > **_TempWater_max_**) : **Alarm(недопустимая температура в емкости 1)**
-  * **_TempWater_min_** и **_TempWater_max_** - глобальные константы для всей установки
+  * если (**P1.TempWater** < **_TempWater_min_**) : **Alarm(TimeStamp;вода в емкости 1 слишком холодная)**, но поливать все равно можно
+  * если (**P1.TempWater** > **_TempWater_max_**) : **Alarm(TimeStamp;вода в емкости 1 слишком теплая)**, но поливать все равно можно
+  * если (**P1.TempWater** > **_TempWater_sos_**) : **Alarm(TimeStamp;вода в емкости 1 горячая, помпа заблокирована)**, блокировка помпы **P1.RelayPump_BLOCKSTATE**=TRUE, нельзя поливать растения кипятком
+  * если (**_TempWater_min_** < **P1.TempWater** < **_TempWater_max_**) и (**P1.RealyPump_BLOCKSTATE**=TRUE) : **Alarm(TimeStamp;температура воды в емкости 1 нормализована, помпа разблокирована)**, разблокировка помпы **P1.RelayPumpBLOCKSTATE**=FALSE
+    * **_TempWater_min_**, **_TempWater_max_**, **_TempWater_sos_** - глобальные константы для всей установки
 * pin A13 (INPUT) - pH метр (**P1.pH**)
-  * если (**P1.pH** < **_P1.pH_min_**) или (**P1.pH** > **_P1.pH_max_**) : **Alarm(недопустимый pH в емкости 1, запрет помпы)** и запрет работы помпы **P1.Relay** - нельзя поливать растения кислотой или щелочью
-  * **_P1.pH_min_** и **_P1.pH_max_** - локальные константы для полигона 1 (может быть на разных полигонах полив разными растворами с разными допусками по pH)
+  * если (**P1.pH** < **_P1.pH_min_**) или (**P1.pH** > **_P1.pH_max_**) : **Alarm(TimeStamp;недопустимый pH в емкости 1, помпа заблокирована)** и блокировка помпы **P1.RelayPump_BLOCKSTATE**=TRUE, нельзя поливать растения кислотой или щелочью
+  * если (**_P1.pH_min_** < **P1.pH** < **_P1.pH_max_**) и (**P1.RealyPump_BLOCKSTATE**=TRUE) : **Alarm(TimeStamp;pH воды в емкости 1 нормализован, помпа разблокирована)**, разблокировка помпы **P1.RelayPumpBLOCKSTATE**=FALSE
+    * **_P1.pH_min_** и **_P1.pH_max_** - локальные константы для полигона 1 (может быть на разных полигонах полив разными растворами с разными допусками по pH)
 * pin A9 (INPUT) - датчик уровня жидкости (**P1.WaterLevel**)
-  * если (**P1.WaterLevel** < **_P1.WaterLevel_min_**) : **Alarm(пустая емкость 1, запрет помпы)** и запрет работы помпы **P1.Relay** - нельзя включать мотор помпы насухую
-  * **_P1.WaterLevel_min_** - локальная константа для полигона 1 (могут быть разные емкости и по разному установлены датчики)
+  * если (**P1.WaterLevel** < **_P1.WaterLevel_min_**) : **Alarm(TimeStamp;пустая емкость 1, помпа заблокирована)** и блокировка помпы **P1.RealyPump_BLOCKSTATE**=TRUE, нельзя включать мотор помпы насухую
+  * если (**P1.WaterLevel**  > **_P1.WaterLevel_min_**)  и (**P1.RealyPump_BLOCKSTATE**=TRUE) : **Alarm(TimeStamp;емкость 1 наполняется, помпа разблокирована)**, разблокировка помпы **P1.RealyPump_BLOCKSTATE**=FALSE
+    * **_P1.WaterLevel_min_** - локальная константа для полигона 1 (могут быть разные емкости и по разному установлены датчики)
 * pin 40 (OUTPUT) - реле помпы (**P1.RelayPump**)
-  * включение на **_P1.RelayPump_worktime_** секунд по триггеру контроля датчиков влажности полигона 1
-  * **_P1.RelayPump_worktime_** - локальная константа для полигона 1 (может быть разная конфигурация полива - помпы, форсунки, и разный расход раствора)
+  * если требуется включить помпу (**P1.RelayPumpONOFF**=ON) и она разблокирована (**P1.RelayPumpBLOCKSTATE**=FALSE) : включение помпы **Event(TimeStamp;помпа P1 включена)** на **_P1.RelayPump_worktime_** секунд, по окончании сброс **P1.RelayPumpONOFF**=OFF и **Event(TimeStamp;помпа P1 выключена)**
+  * если требуется включить помпу (**P1.RelayPumpONOFF**=ON) и она заблокирована (**P1.RelayPumpBLOCKSTATE**=TRUE) : **Alarm(TimeStamp;полив полигона 1 невозможен, помпа заблокирована)**, сброс **P1.RelayPumpONOFF**=OFF
+    * **_P1.RelayPump_worktime_** - локальная константа для полигона 1 (может быть разная конфигурация полива - помпы, форсунки, и разный расход раствора)
 
 #### Датчики влажности
 * pin A1 (INPUT) - датчик влажности трубы "Помидоры" (**P1.Soil1**)
 * pin A2 (INPUT) - датчик влажности трубы "Помидоры" (**P1.Soil2**)
 * pin A3 (INPUT) - датчик влажности трубы "Клубника" (**P1.Soil3**)
 * pin A4 (INPUT) - датчик влажности трубы "Клубника" (**P1.Soil4**)
-  * если (среднее(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) < **_P1.Soil_min_**) : включить реле помпы **P1.RelayPump**, если есть запрет помпы - **Alarm(низкая влажность полигона 1, полив невозможен - помпа отключена)**
-  * **_P1.Soil_min_** - локальная константа для полигона 1 (могут быть разные условия влажности между полигонами для разных растений)
-  * если (среднеквадратичная ошибка(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) > **_SoilErr_max_**) : **Alarm(неравномерная влажность на полигоне 1)**
-  * **_SoilErr_max_** - глобальная константа для всей установки 
+  * если (среднее(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) < **_P1.Soil_min_**) : включить реле помпы **P1.RelayPumpONOFF**=ON
+    * **_P1.Soil_min_** - локальная константа для полигона 1 (могут быть разные условия влажности между полигонами для разных растений)
+  * если (среднеквадратичная ошибка(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) > **_SoilErr_max_**) : **Alarm(TimeStamp;неравномерная влажность на полигоне 1 - требуется обслуживание)**
+    * **_SoilErr_max_** - глобальная константа для всей установки 
 
 ## Полигон 2 (P2)
 
 #### Емкость с раствором
 
-Алгоритмы контроля такие же, с учетом локальных констант
+Алгоритмы контроля такие же
 
 * pin A12 (INPUT) - датчик температуры (**P2.TempWater**) 
 * pin A14 (INPUT) - pH метр (**P2.pH**)
@@ -47,11 +53,11 @@
 
 ## Общая освещенность
 * pin A15 (INPUT) - фотодатчик (**Light**), длительность непрерывного света (**LightONtime**), длительность непрерывной темноты (**LightOFFtime**)
-  * если (текущее значение **LightONtime** > **_LightONtime_max_**) : **Alarm(день длится слишком долго)**, лампа не гаснет
-  * если (текущее значение **LightOFFtime** > **_LightOFFtime_max_**) : **Alarm(ночь длится слишком долго)**, лампа не зажигается
-  * если (в момент переключения освещения прошедшее **LightONtime** < **_LightONtime_min_**) : **Alarm(день был слишком короткий)**, лампа зажглась, но слишком быстро снова погасла
-  * если (в момент переключения освещения прошедшее **LightOFFtime** < **_LigthOFFtime_min_**) : **Alarm(ночь была слишком короткая)**, лампа погасла, но слишком быстро снова зажглась
-  * **_LightONtime_max_**, **_LightOFFtime_max_**, **_LightONtime_min_**, **_LightOFFtime_min_** - глобальные константы для всей установки
+  * если текущее значение (**LightONtime** > **_LightONtime_max_**) : **Alarm(TimeStamp;день длится слишком долго)**, лампа не гаснет
+  * если текущее значение (**LightOFFtime** > **_LightOFFtime_max_**) : **Alarm(TimeStamp;ночь длится слишком долго)**, лампа не зажигается
+  * если в момент переключения освещения прошедшее (**LightONtime** < **_LightONtime_min_**) : **Alarm(TimeStamp;день был слишком короткий)**, лампа зажглась, но слишком быстро снова погасла
+  * если в момент переключения освещения прошедшее (**LightOFFtime** < **_LigthOFFtime_min_**) : **Alarm(TimeStamp;ночь была слишком короткая)**, лампа погасла, но слишком быстро снова зажглась
+    * **_LightONtime_max_**, **_LightOFFtime_max_**, **_LightONtime_min_**, **_LightOFFtime_min_** - глобальные константы для всей установки
   
 ## Общая температура и влажность
 
@@ -61,19 +67,19 @@
 
 * pin 2 (INPUT) - влажность (**Humidity.Val**), время в течение которого влажность меньше порога **Humidity.LOWtime**, больше порога **Humidity.HIGHtime**
 * pin 42 (OUTPUT) - реле включения увлажнителя (**Humidity.Relay**)
-  * если (**Humidity.Val** < **_Humidity.Val_ref_**) : ВКЛючить увлажнитель **Humidity.Relay**
-  * если (**Humidity.Val** => **_Humidity.Val_ref_**) : ВЫКЛючить увлажнитель **Humidity.Relay**
-  * если (**Humidity.LOWtime** > **_Humidity.LOWtime_max_**) : **Alert(низкая влажность слишком долго)**
-  * если (**Humidity.HIGHtime** > **_Humidity.HIGHtime_max_**) : **Alert(высокая влажность слишком долго)**
+  * если (**Humidity.Val** < **_Humidity.Val_ref_**) : ВКЛючить увлажнитель **Humidity.RelayONOFF**=ON и **Event(TimeStamp;увлажнитель включен)**
+  * если (**Humidity.Val** => **_Humidity.Val_ref_**) : ВЫКЛючить увлажнитель **Humidity.RelayONOFF**=OFF и **Event(TimeStamp;увлажнитель выключен)**
+  * если (**Humidity.LOWtime** > **_Humidity.LOWtime_max_**) : **Alert(TimeStamp;низкая влажность слишком долго)**
+  * если (**Humidity.HIGHtime** > **_Humidity.HIGHtime_max_**) : **Alert(TimeStamp;высокая влажность слишком долго)**
 
 #### Температура (Temp)
 
 * pin 2 (INPUT) - температура (**Temp.Val**), время в течение которого температура меньше порога **Temp.LOWtime**, больше порога **Temp.HIGHtime**
 * pin 43 (OUTPUT) - реле включения вытяжки (**Temp.RelayVent**)
-  * если (**Temp.Val** < **_Temp.Val_ref_**) : ВЫКЛючить вытяжку **Temp.RelayVent**
-  * если (**Temp.Val** => **_Temp.Val_ref_**) : ВКЛючить вытяжку **Temp.RelayVent**
-  * если (**Temp.LOWtime** > **_Temp.LOWtime_max_**) : **Alert(низкая температура слишком долго)**
-  * если (**Temp.HIGHtime** > **_Temp.HIGHtime_max_**) : **Alert(высокая температура слишком долго)**
+  * если (**Temp.Val** < **_Temp.Val_ref_**) : ВЫКЛючить вытяжку **Temp.RelayVentONOFF**=OFF и **Event(TimeStamp;вытяжка включена)**
+  * если (**Temp.Val** => **_Temp.Val_ref_**) : ВКЛючить вытяжку **Temp.RelayVentONOFF**=ON и **Event(TimeStamp;вытяжка выключена)**
+  * если (**Temp.LOWtime** > **_Temp.LOWtime_max_**) : **Alert(TimeStamp;низкая температура слишком долго)**
+  * если (**Temp.HIGHtime** > **_Temp.HIGHtime_max_**) : **Alert(TimeStamp;высокая температура слишком долго)**
 
 ## Сводная таблица коммутации сигнальных контактов
 
@@ -99,3 +105,29 @@
 | 41 | P2.RelayPump |
 | 42 | Humidity.Relay |
 | 43 | Temp.RelayVent |
+
+## Формат строки CSV файла для записи на SD карту
+
+```
+TimeStamp;Light_ONOFF;Humidity.Val;Temp.Val;P1.Soil1;P1.Soil2;P1.Soil3;P1.Soil4;P2.Soil1;P2.Soil2;P2.Soil3;P2.Soil4;P1.WaterLevel;P2.WaterLevel;P1.TempWater;P2.TempWater;P1.pH;P2.pH;P1.RelayPump_ONOFF;P1.RelayPump_BLOCKSTATE;P2.RelayPump_ONOFF;P2.RelayPump_BLOCKSTATE;Humidity.Relay_ONOFF;Temp.RelayVent_ONOFF
+```
+
+## Формат обмена данными с ESP
+
+#### От системы в облако
+Передача данных телеметерии
+```
+T:D;копия строки записи в CSV файл
+```
+Передача оповещений Alert
+```
+T:A;текст Alert
+```
+Передача событий Event
+```
+T:E;текст Event
+```
+
+#### От облака к системе
+
+Будет определено позднее
