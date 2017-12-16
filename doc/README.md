@@ -16,9 +16,9 @@
   * если (**_P1.pH_min_** < **P1.pH** < **_P1.pH_max_**) и (**P1.RealyPump_BLOCKSTATE**=TRUE) : **Alarm(TimeStamp;pH воды в емкости 1 нормализован, помпа разблокирована)**, разблокировка помпы **P1.RelayPumpBLOCKSTATE**=FALSE
     * **_P1.pH_min_** и **_P1.pH_max_** - локальные константы для полигона 1 (может быть на разных полигонах полив разными растворами с разными допусками по pH)
 * pin A9 (INPUT) - датчик уровня жидкости (**P1.WaterLevel**)
-  * если (**P1.WaterLevel** < **_P1.WaterLevel_min_**) : **Alarm(TimeStamp;пустая емкость 1, помпа заблокирована)** и блокировка помпы **P1.RealyPump_BLOCKSTATE**=TRUE, нельзя включать мотор помпы насухую
-  * если (**P1.WaterLevel**  > **_P1.WaterLevel_min_**)  и (**P1.RealyPump_BLOCKSTATE**=TRUE) : **Alarm(TimeStamp;емкость 1 наполняется, помпа разблокирована)**, разблокировка помпы **P1.RealyPump_BLOCKSTATE**=FALSE
-    * **_P1.WaterLevel_min_** - локальная константа для полигона 1 (могут быть разные емкости и по разному установлены датчики)
+  * если (**P1.WaterLevel** < **_P1.WaterLevel_min_**) : **Alarm(TimeStamp;в емкости 1 снизился уровень)** и установка признака **P1.WaterLevelLOW**=TRUE
+  * если (**P1.WaterLevel**  > **_P1.WaterLevel_max_**)  и (**P1.WaterLevelLOW**=TRUE) : **Alarm(TimeStamp;емкость 1 наполнена)** и сброс признака **P1.P1.WaterLevelLOW**=FALSE
+    * **_P1.WaterLevel_min_**, **_P1.WaterLevel_max_** - локальные константы для полигона 1 (могут быть разные емкости и по разному установлены датчики)
 * pin 40 (OUTPUT) - реле помпы (**P1.RelayPump**)
   * если требуется включить помпу (**P1.RelayPumpONOFF**=ON) и она разблокирована (**P1.RelayPumpBLOCKSTATE**=FALSE) : включение помпы **Event(TimeStamp;помпа P1 включена)** на **_P1.RelayPump_worktime_** секунд, по окончании сброс **P1.RelayPumpONOFF**=OFF и **Event(TimeStamp;помпа P1 выключена)**
   * если требуется включить помпу (**P1.RelayPumpONOFF**=ON) и она заблокирована (**P1.RelayPumpBLOCKSTATE**=TRUE) : **Alarm(TimeStamp;полив полигона 1 невозможен, помпа заблокирована)**, сброс **P1.RelayPumpONOFF**=OFF
@@ -29,8 +29,10 @@
 * pin A2 (INPUT) - датчик влажности трубы "Помидоры" (**P1.Soil2**)
 * pin A3 (INPUT) - датчик влажности трубы "Клубника" (**P1.Soil3**)
 * pin A4 (INPUT) - датчик влажности трубы "Клубника" (**P1.Soil4**)
-  * если (среднее(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) < **_P1.Soil_min_**) : включить реле помпы **P1.RelayPumpONOFF**=ON
-    * **_P1.Soil_min_** - локальная константа для полигона 1 (могут быть разные условия влажности между полигонами для разных растений)
+  * если (среднее(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) < **_P1.Soil_min_**) : включить реле помпы **P1.RelayPumpONOFF**=ON и установить флаг проверки повышения влажности **P1.SoilUPCheck**=TRUE и вычислить время проверки **P1.SoilUPCheckTime**=now()+**P1.SoilUpCheckPeriod**
+    * **_P1.XXXXX_** - локальные константы для полигона 1 (могут быть разные условия влажности между полигонами для разных растений)
+  * если (**P1.SoilUPCheck**==TRUE) и (now()>=**P1.SoilUpCheckTime**) проверить среднюю влажность, если меньше **_P1.Soil_min_** : **Alarm(TimeStamp;команда на включение помпы была подана, но влажность не увеличилась)** и увеличить счетчик ошибок **P1.SoilUPError**++, иначе сбросить счетчик ошибок **P1.SoilUPError**=0 и выключить необходимость проверки **P1.SoilUPCheck**==FALSE
+  * если **P1.SoilUPError**>2 заблокировать помпу **Alarm(TimeStamp;команда на включение помпы была подана три раза, но влажность не увеличилась - помпа заблокирована)** и **P1.RelayPumpBLOCKSTATE**=TRUE
   * если (среднеквадратичная ошибка(**P1.Soil1**, **P1.Soil2**, **P1.Soil3**, **P1.Soil4**) > **_SoilErr_max_**) : **Alarm(TimeStamp;неравномерная влажность на полигоне 1 - требуется обслуживание)**
     * **_SoilErr_max_** - глобальная константа для всей установки 
 
